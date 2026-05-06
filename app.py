@@ -6,6 +6,15 @@ app = Flask(__name__, template_folder=os.path.join('birds', 'templates'))
 
 DB_PATH = os.path.join('birds', 'ptaci.db')
 
+ALLOWED_SORT_COLUMNS = {
+    "nazev", "vedecky_nazev", "rad", "celed",
+    "delka_cm", "rozpeti_cm", "hmotnost_g",
+    "status_ohrozeni", "typ_potravy", "migrace",
+    "vyskyt_kontinent", "snuska_ks",
+}
+DEFAULT_SORT_COLUMN = "nazev"
+DEFAULT_SORT_DIRECTION = "ASC"
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -116,12 +125,20 @@ def dashboard():
     
     # Vytvořit WHERE klauzuli
     where_clause, params = build_query(request.args)
+
+    # Bezpečné řazení podle povolených sloupců a směru
+    sort_column = request.args.get('sort_by', '').strip()
+    if sort_column not in ALLOWED_SORT_COLUMNS:
+        sort_column = DEFAULT_SORT_COLUMN
+    sort_order = request.args.get('sort_order', '').strip().upper()
+    if sort_order not in ['ASC', 'DESC']:
+        sort_order = DEFAULT_SORT_DIRECTION
     
     # Sestrojit SQL dotaz
     query = 'SELECT * FROM ptaci'
     if where_clause:
         query += ' WHERE ' + where_clause
-    query += ' ORDER BY nazev ASC'
+    query += f' ORDER BY {sort_column} {sort_order}'
     
     # Spustit dotaz
     cursor.execute(query, params)

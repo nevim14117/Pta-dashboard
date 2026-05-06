@@ -171,6 +171,32 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <div class="filter-group">
+                    <label for="sort_by">Řadit podle</label>
+                    <select id="sort_by" name="sort_by">
+                        <option value="nazev" {% if filters.get('sort_by', 'nazev') == 'nazev' %}selected{% endif %}>Název</option>
+                        <option value="vedecky_nazev" {% if filters.get('sort_by') == 'vedecky_nazev' %}selected{% endif %}>Vědecký název</option>
+                        <option value="rad" {% if filters.get('sort_by') == 'rad' %}selected{% endif %}>Řád</option>
+                        <option value="celed" {% if filters.get('sort_by') == 'celed' %}selected{% endif %}>Čeleď</option>
+                        <option value="delka_cm" {% if filters.get('sort_by') == 'delka_cm' %}selected{% endif %}>Délka (cm)</option>
+                        <option value="rozpeti_cm" {% if filters.get('sort_by') == 'rozpeti_cm' %}selected{% endif %}>Rozpětí (cm)</option>
+                        <option value="hmotnost_g" {% if filters.get('sort_by') == 'hmotnost_g' %}selected{% endif %}>Hmotnost (g)</option>
+                        <option value="status_ohrozeni" {% if filters.get('sort_by') == 'status_ohrozeni' %}selected{% endif %}>Status ohrožení</option>
+                        <option value="typ_potravy" {% if filters.get('sort_by') == 'typ_potravy' %}selected{% endif %}>Potrava</option>
+                        <option value="migrace" {% if filters.get('sort_by') == 'migrace' %}selected{% endif %}>Migrace</option>
+                        <option value="vyskyt_kontinent" {% if filters.get('sort_by') == 'vyskyt_kontinent' %}selected{% endif %}>Kontinent</option>
+                        <option value="snuska_ks" {% if filters.get('sort_by') == 'snuska_ks' %}selected{% endif %}>Snůška (ks)</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="sort_order">Směr řazení</label>
+                    <select id="sort_order" name="sort_order">
+                        <option value="ASC" {% if filters.get('sort_order', 'ASC') == 'ASC' %}selected{% endif %}>Vzestupně</option>
+                        <option value="DESC" {% if filters.get('sort_order') == 'DESC' %}selected{% endif %}>Sestupně</option>
+                    </select>
+                </div>
                 
                 <div class="filter-group">
                     <label for="hmotnost_min">Hmotnost od (g)</label>
