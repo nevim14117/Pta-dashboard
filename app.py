@@ -126,6 +126,22 @@ def dashboard():
     # Vytvořit WHERE klauzuli
     where_clause, params = build_query(request.args)
 
+    # Získat statistiku
+    stats_query = '''SELECT
+        COUNT(*) as pocet,
+        ROUND(AVG(delka_cm), 1) as prum_delka,
+        MAX(hmotnost_g) as max_hmotnost,
+        MIN(hmotnost_g) as min_hmotnost,
+        ROUND(AVG(hmotnost_g), 1) as prum_hmotnost,
+        ROUND(AVG(rozpeti_cm), 1) as prum_rozpeti
+    FROM ptaci'''
+    if where_clause:
+        stats_query += ' WHERE ' + where_clause
+    
+    cursor.execute(stats_query, params)
+    stats_row = cursor.fetchone()
+    stats = dict(stats_row) if stats_row else {}
+
     # Bezpečné řazení podle povolených sloupců a směru
     sort_column = request.args.get('sort_by', '').strip()
     if sort_column not in ALLOWED_SORT_COLUMNS:
@@ -150,7 +166,8 @@ def dashboard():
     conn.close()
     
     return render_template('dashboard.html', 
-                         ptaci=ptaci, 
+                         ptaci=ptaci,
+                         stats=stats,
                          rady=filter_options['rady'],
                          typ_potravy_list=filter_options['typ_potravy_list'],
                          kontinenty=filter_options['kontinenty'],

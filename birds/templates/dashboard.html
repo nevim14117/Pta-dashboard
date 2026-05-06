@@ -114,6 +114,39 @@
         tr:hover {
             background-color: #f0f0f0;
         }
+        .stats-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #4CAF50;
+        }
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .stat-card .stat-unit {
+            font-size: 13px;
+            color: #999;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -215,6 +248,27 @@
             </div>
         </form>
     </div>
+    
+    {% if stats %}
+    <div class="stats-section">
+        <div class="stat-card">
+            <h3>Počet druhů</h3>
+            <div><span class="stat-value">{{ stats['pocet'] or 0 }}</span></div>
+        </div>
+        <div class="stat-card">
+            <h3>Průměrná délka</h3>
+            <div><span class="stat-value">{{ stats['prum_delka'] or '-' }}</span><span class="stat-unit">cm</span></div>
+        </div>
+        <div class="stat-card">
+            <h3>Průměrná hmotnost</h3>
+            <div><span class="stat-value">{{ stats['prum_hmotnost'] or '-' }}</span><span class="stat-unit">g</span></div>
+        </div>
+        <div class="stat-card">
+            <h3>Maximální hmotnost</h3>
+            <div><span class="stat-value">{{ stats['max_hmotnost'] or '-' }}</span><span class="stat-unit">g</span></div>
+        </div>
+    </div>
+    {% endif %}
     
     {% if ptaci %}
     <div class="result-info">
