@@ -148,6 +148,7 @@
             margin-left: 5px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <h1>Databáze ptáků</h1>
@@ -318,5 +319,125 @@
         </tbody>
     </table>
     {% endif %}
+    
+    {% if ptaci %}
+    <div style="margin-top: 40px;">
+        <h2 style="color: #333; margin-bottom: 20px;">Grafické přehledy</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #333; margin-top: 0;">Počet druhů podle řádu</h3>
+                <canvas id="chartRad"></canvas>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #333; margin-top: 0;">Tažní vs. netažní ptáci</h3>
+                <canvas id="chartMigrace"></canvas>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #333; margin-top: 0;">Průměrná hmotnost podle typu potravy</h3>
+                <canvas id="chartPotraba"></canvas>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #333; margin-top: 0;">Počet druhů podle kontinentu</h3>
+                <canvas id="chartKontinent"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <script>
+        // Druhy podle řádu - sloupcový graf
+        {% if graf_rad_labels %}
+        new Chart(document.getElementById('chartRad'), {
+            type: 'bar',
+            data: {
+                labels: {{ graf_rad_labels|tojson }},
+                datasets: [{
+                    label: 'Počet druhů',
+                    data: {{ graf_rad_data|tojson }},
+                    backgroundColor: '#2d6a4f',
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Tažní vs. netažní - prstencový graf
+        {% if migrace_labels %}
+        new Chart(document.getElementById('chartMigrace'), {
+            type: 'doughnut',
+            data: {
+                labels: {{ migrace_labels|tojson }},
+                datasets: [{
+                    data: {{ migrace_data|tojson }},
+                    backgroundColor: ['#2d6a4f', '#a3b899'],
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Hmotnost podle potravy - sloupcový graf
+        {% if graf_potraba_labels %}
+        new Chart(document.getElementById('chartPotraba'), {
+            type: 'bar',
+            data: {
+                labels: {{ graf_potraba_labels|tojson }},
+                datasets: [{
+                    label: 'Průměrná hmotnost (g)',
+                    data: {{ graf_potraba_data|tojson }},
+                    backgroundColor: '#1b4332',
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Druhy podle kontinentu - sloupcový graf
+        {% if graf_kontinent_labels %}
+        new Chart(document.getElementById('chartKontinent'), {
+            type: 'bar',
+            data: {
+                labels: {{ graf_kontinent_labels|tojson }},
+                datasets: [{
+                    label: 'Počet druhů',
+                    data: {{ graf_kontinent_data|tojson }},
+                    backgroundColor: '#40916c',
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+        {% endif %}
+    </script>
 </body>
 </html>

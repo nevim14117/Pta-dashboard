@@ -163,6 +163,51 @@ def dashboard():
     # Načíst volby pro filtry
     filter_options = get_filter_options(conn)
     
+    # Grafy - počet druhů podle řádu
+    query_rad = 'SELECT rad, COUNT(*) as pocet FROM ptaci'
+    if where_clause:
+        query_rad += ' WHERE ' + where_clause
+    query_rad += ' GROUP BY rad ORDER BY pocet DESC'
+    cursor.execute(query_rad, params)
+    druhy_rad = cursor.fetchall()
+    graf_rad_labels = [r["rad"] for r in druhy_rad if r["rad"]]
+    graf_rad_data = [r["pocet"] for r in druhy_rad if r["rad"]]
+    
+    # Grafy - průměrná hmotnost podle typu potravy
+    query_potraba = 'SELECT typ_potravy, ROUND(AVG(hmotnost_g), 0) as prum FROM ptaci'
+    if where_clause:
+        query_potraba += ' WHERE ' + where_clause
+    query_potraba += ' GROUP BY typ_potravy ORDER BY prum DESC'
+    cursor.execute(query_potraba, params)
+    potraba_data = cursor.fetchall()
+    graf_potraba_labels = [r["typ_potravy"] for r in potraba_data if r["typ_potravy"]]
+    graf_potraba_data = [r["prum"] for r in potraba_data if r["typ_potravy"]]
+    
+    # Grafy - tažní vs. netažní
+    query_migrace = 'SELECT migrace, COUNT(*) as pocet FROM ptaci'
+    if where_clause:
+        query_migrace += ' WHERE ' + where_clause
+    query_migrace += ' GROUP BY migrace'
+    cursor.execute(query_migrace, params)
+    migrace_data = cursor.fetchall()
+    migrace_labels = []
+    migrace_data_values = []
+    for r in migrace_data:
+        if r["migrace"] is not None:
+            label = "Tažný" if r["migrace"] == 1 else "Netažný"
+            migrace_labels.append(label)
+            migrace_data_values.append(r["pocet"])
+    
+    # Grafy - počet druhů podle kontinentu
+    query_kontinent = 'SELECT vyskyt_kontinent, COUNT(*) as pocet FROM ptaci'
+    if where_clause:
+        query_kontinent += ' WHERE ' + where_clause
+    query_kontinent += ' GROUP BY vyskyt_kontinent ORDER BY pocet DESC'
+    cursor.execute(query_kontinent, params)
+    kontinent_data = cursor.fetchall()
+    graf_kontinent_labels = [r["vyskyt_kontinent"] for r in kontinent_data if r["vyskyt_kontinent"]]
+    graf_kontinent_data = [r["pocet"] for r in kontinent_data if r["vyskyt_kontinent"]]
+    
     conn.close()
     
     return render_template('dashboard.html', 
@@ -172,7 +217,15 @@ def dashboard():
                          typ_potravy_list=filter_options['typ_potravy_list'],
                          kontinenty=filter_options['kontinenty'],
                          statusy=filter_options['statusy'],
-                         filters=request.args)
+                         filters=request.args,
+                         graf_rad_labels=graf_rad_labels,
+                         graf_rad_data=graf_rad_data,
+                         graf_potraba_labels=graf_potraba_labels,
+                         graf_potraba_data=graf_potraba_data,
+                         migrace_labels=migrace_labels,
+                         migrace_data=migrace_data_values,
+                         graf_kontinent_labels=graf_kontinent_labels,
+                         graf_kontinent_data=graf_kontinent_data)
 
 if __name__ == "__main__":
     app.run(debug=True)
