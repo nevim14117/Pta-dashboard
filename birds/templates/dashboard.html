@@ -1,17 +1,13 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Databáze ptáků</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <header class="page-header">
-        <h1>Databáze ptáků</h1>
-    </header>
-    
+{% extends "base.html" %}
+
+{% block title %}Databáze ptáků{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <h1>Databáze ptáků</h1>
+</header>
+
+<div class="container">
     <div class="filter-panel">
         <h2>Filtry</h2>
         <form method="GET" action="/">
@@ -25,7 +21,6 @@
                         {% endfor %}
                     </select>
                 </div>
-                
                 <div class="filter-group">
                     <label for="typ_potravy">Typ potravy</label>
                     <select id="typ_potravy" name="typ_potravy">
@@ -35,7 +30,6 @@
                         {% endfor %}
                     </select>
                 </div>
-                
                 <div class="filter-group">
                     <label for="vyskyt_kontinent">Kontinent</label>
                     <select id="vyskyt_kontinent" name="vyskyt_kontinent">
@@ -45,7 +39,6 @@
                         {% endfor %}
                     </select>
                 </div>
-                
                 <div class="filter-group">
                     <label for="migrace">Migrace</label>
                     <select id="migrace" name="migrace">
@@ -54,7 +47,6 @@
                         <option value="0" {% if filters.get('migrace') == '0' %}selected{% endif %}>Netažný</option>
                     </select>
                 </div>
-                
                 <div class="filter-group">
                     <label for="status_ohrozeni">Status ohrožení</label>
                     <select id="status_ohrozeni" name="status_ohrozeni">
@@ -64,7 +56,6 @@
                         {% endfor %}
                     </select>
                 </div>
-
                 <div class="filter-group">
                     <label for="sort_by">Řadit podle</label>
                     <select id="sort_by" name="sort_by">
@@ -82,7 +73,6 @@
                         <option value="snuska_ks" {% if filters.get('sort_by') == 'snuska_ks' %}selected{% endif %}>Snůška (ks)</option>
                     </select>
                 </div>
-
                 <div class="filter-group">
                     <label for="sort_order">Směr řazení</label>
                     <select id="sort_order" name="sort_order">
@@ -90,25 +80,22 @@
                         <option value="DESC" {% if filters.get('sort_order') == 'DESC' %}selected{% endif %}>Sestupně</option>
                     </select>
                 </div>
-                
                 <div class="filter-group">
                     <label for="hmotnost_min">Hmotnost od (g)</label>
                     <input type="number" id="hmotnost_min" name="hmotnost_min" value="{{ filters.get('hmotnost_min', '') }}" placeholder="min">
                 </div>
-                
                 <div class="filter-group">
                     <label for="hmotnost_max">Hmotnost do (g)</label>
                     <input type="number" id="hmotnost_max" name="hmotnost_max" value="{{ filters.get('hmotnost_max', '') }}" placeholder="max">
                 </div>
             </div>
-            
             <div class="filter-buttons">
                 <button type="submit" class="btn-filter">Filtrovat</button>
                 <button type="button" class="btn-reset" onclick="location.href='/';">Zrušit filtry</button>
             </div>
         </form>
     </div>
-    
+
     {% if stats %}
     <div class="stats-section">
         <div class="stat-card">
@@ -129,7 +116,7 @@
         </div>
     </div>
     {% endif %}
-    
+
     {% if ptaci %}
     <div class="result-info">
         Nalezeno <strong>{{ ptaci|length }}</strong> ptáků
@@ -139,7 +126,7 @@
         Žádní ptáci se neshodují s vybranými filtry.
     </div>
     {% endif %}
-    
+
     {% if ptaci %}
     <div class="table-wrapper">
         <table>
@@ -169,19 +156,7 @@
                     <td>{{ ptak['delka_cm'] or '-' }}</td>
                     <td>{{ ptak['rozpeti_cm'] or '-' }}</td>
                     <td>{{ ptak['hmotnost_g'] or '-' }}</td>
-                    <td>
-                        {% if ptak['status_ohrozeni'] == 'Málo dotčený' %}
-                        <span class="badge badge--malo">Málo dotčený</span>
-                        {% elif ptak['status_ohrozeni'] == 'Téměř ohrožený' %}
-                        <span class="badge badge--temer">Téměř ohrožený</span>
-                        {% elif ptak['status_ohrozeni'] == 'Zranitelný' %}
-                        <span class="badge badge--zranitelny">Zranitelný</span>
-                        {% elif ptak['status_ohrozeni'] == 'Ohrožený' %}
-                        <span class="badge badge--ohrozeny">Ohrožený</span>
-                        {% else %}
-                        {{ ptak['status_ohrozeni'] or '-' }}
-                        {% endif %}
-                    </td>
+                    <td>{{ ptak['status_ohrozeni'] or '-' }}</td>
                     <td>{{ ptak['typ_potravy'] or '-' }}</td>
                     <td>{% if ptak['migrace'] == 1 %}Ano{% elif ptak['migrace'] == 0 %}Ne{% else %}-{% endif %}</td>
                     <td>{{ ptak['vyskyt_kontinent'] or '-' }}</td>
@@ -192,27 +167,23 @@
         </table>
     </div>
     {% endif %}
-    
+
     {% if ptaci %}
     <div class="charts-section">
         <h2>Grafické přehledy</h2>
-        
         <div class="charts-grid">
             <div class="chart-container">
                 <h3>Počet druhů podle řádu</h3>
                 <canvas id="chartRad"></canvas>
             </div>
-            
             <div class="chart-container">
                 <h3>Tažní vs. netažní ptáci</h3>
                 <canvas id="chartMigrace"></canvas>
             </div>
-            
             <div class="chart-container">
                 <h3>Průměrná hmotnost podle typu potravy</h3>
                 <canvas id="chartPotraba"></canvas>
             </div>
-            
             <div class="chart-container">
                 <h3>Počet druhů podle kontinentu</h3>
                 <canvas id="chartKontinent"></canvas>
@@ -220,97 +191,95 @@
         </div>
     </div>
     {% endif %}
-    
-    <script>
-        // Druhy podle řádu - sloupcový graf
-        {% if graf_rad_labels %}
-        new Chart(document.getElementById('chartRad'), {
-            type: 'bar',
-            data: {
-                labels: {{ graf_rad_labels|tojson }},
-                datasets: [{
-                    label: 'Počet druhů',
-                    data: {{ graf_rad_data|tojson }},
-                    backgroundColor: '#2d6a4f',
-                    borderRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                }
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    {% if graf_rad_labels %}
+    new Chart(document.getElementById('chartRad'), {
+        type: 'bar',
+        data: {
+            labels: {{ graf_rad_labels|tojson }},
+            datasets: [{
+                label: 'Počet druhů',
+                data: {{ graf_rad_data|tojson }},
+                backgroundColor: '#2d6a4f',
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
             }
-        });
-        {% endif %}
-        
-        // Tažní vs. netažní - prstencový graf
-        {% if migrace_labels %}
-        new Chart(document.getElementById('chartMigrace'), {
-            type: 'doughnut',
-            data: {
-                labels: {{ migrace_labels|tojson }},
-                datasets: [{
-                    data: {{ migrace_data|tojson }},
-                    backgroundColor: ['#2d6a4f', '#a3b899'],
-                    borderRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
+        }
+    });
+    {% endif %}
+
+    {% if migrace_labels %}
+    new Chart(document.getElementById('chartMigrace'), {
+        type: 'doughnut',
+        data: {
+            labels: {{ migrace_labels|tojson }},
+            datasets: [{
+                data: {{ migrace_data|tojson }},
+                backgroundColor: ['#2d6a4f', '#a3b899'],
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
             }
-        });
-        {% endif %}
-        
-        // Hmotnost podle potravy - sloupcový graf
-        {% if graf_potraba_labels %}
-        new Chart(document.getElementById('chartPotraba'), {
-            type: 'bar',
-            data: {
-                labels: {{ graf_potraba_labels|tojson }},
-                datasets: [{
-                    label: 'Průměrná hmotnost (g)',
-                    data: {{ graf_potraba_data|tojson }},
-                    backgroundColor: '#1b4332',
-                    borderRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true }
-                }
+        }
+    });
+    {% endif %}
+
+    {% if graf_potraba_labels %}
+    new Chart(document.getElementById('chartPotraba'), {
+        type: 'bar',
+        data: {
+            labels: {{ graf_potraba_labels|tojson }},
+            datasets: [{
+                label: 'Průměrná hmotnost (g)',
+                data: {{ graf_potraba_data|tojson }},
+                backgroundColor: '#1b4332',
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true }
             }
-        });
-        {% endif %}
-        
-        // Druhy podle kontinentu - sloupcový graf
-        {% if graf_kontinent_labels %}
-        new Chart(document.getElementById('chartKontinent'), {
-            type: 'bar',
-            data: {
-                labels: {{ graf_kontinent_labels|tojson }},
-                datasets: [{
-                    label: 'Počet druhů',
-                    data: {{ graf_kontinent_data|tojson }},
-                    backgroundColor: '#40916c',
-                    borderRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                }
+        }
+    });
+    {% endif %}
+
+    {% if graf_kontinent_labels %}
+    new Chart(document.getElementById('chartKontinent'), {
+        type: 'bar',
+        data: {
+            labels: {{ graf_kontinent_labels|tojson }},
+            datasets: [{
+                label: 'Počet druhů',
+                data: {{ graf_kontinent_data|tojson }},
+                backgroundColor: '#40916c',
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
             }
-        });
-        {% endif %}
-    </script>
-</body>
-</html>
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

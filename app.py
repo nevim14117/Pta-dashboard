@@ -1,10 +1,15 @@
-from flask import Flask, render_template, request
+from functools import wraps
+from flask import Flask, render_template, request, redirect, url_for, session, abort
 import sqlite3
 import os
 
 app = Flask(__name__, template_folder=os.path.join('birds', 'templates'))
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
 DB_PATH = os.path.join('birds', 'ptaci.db')
+AUTH_USERS = {
+    'admin': 'admin123'
+}
 
 ALLOWED_SORT_COLUMNS = {
     "nazev", "vedecky_nazev", "rad", "celed",
@@ -18,7 +23,31 @@ DEFAULT_SORT_DIRECTION = "ASC"
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS bird_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            druh_ptaka TEXT NOT NULL,
+            datum_pozorovani TEXT NOT NULL,
+            lokalita TEXT NOT NULL,
+            pocet_jedincu INTEGER,
+            poznamka TEXT
+        )
+    ''')
     return conn
+
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login', next=request.path))
+        return view(*args, **kwargs)
+    return wrapped_view
+
+@app.context_processor
+def inject_auth_state():
+    return {
+        'logged_in': session.get('logged_in', False)
+    }
 
 def build_query(params):
     """
@@ -226,6 +255,116 @@ def dashboard():
                          migrace_data=migrace_data_values,
                          graf_kontinent_labels=graf_kontinent_labels,
                          graf_kontinent_data=graf_kontinent_data)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+
+        if AUTH_USERS.get(username) == password:
+            session['logged_in'] = True
+            session['username'] = username
+            return redirect(request.args.get('next') or url_for('manage_records'))
+
+        error = 'Neplatné přihlašovací údaje.'
+
+    return render_template('login.html', error=error)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('dashboard'))
+
+@app.route('/manage')
+@login_required
+def manage_records():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM bird_records ORDER BY id DESC')
+    records = cursor.fetchall()
+    conn.close()
+    return render_template('manage.html', records=records)
+
+@app.route('/manage/add', methods=['GET', 'POST'])
+@login_required
+def add_record():
+    if request.method == 'POST':
+        druh_ptaka = request.form.get('druh_ptaka', '').strip()
+        datum_pozorovani = request.form.get('datum_pozorovani', '').strip()
+        lokalita = request.form.get('lokalita', '').strip()
+        pocet_jedincu = request.form.get('pocet_jedincu', '').strip()
+        poznamka = request.form.get('poznamka', '').strip()
+
+        if not druh_ptaka or not datum_pozorovani or not lokalita:
+            error = 'Prosím vyplňte všechna povinná pole.'
+            return render_template('record_form.html', form_title='Přidat nový záznam', record=request.form, error=error)
+
+        try:
+            pocet = int(pocet_jedincu) if pocet_jedincu else None
+        except ValueError:
+            pocet = None
+
+        conn = get_db()
+        conn.execute(
+            'INSERT INTO bird_records (druh_ptaka, datum_pozorovani, lokalita, pocet_jedincu, poznamka) VALUES (?, ?, ?, ?, ?)',
+            (druh_ptaka, datum_pozorovani, lokalita, pocet, poznamka)
+        )
+        conn.commit()
+        conn.close()
+        return redirect(url_for('manage_records'))
+
+    return render_template('record_form.html', form_title='Přidat nový záznam', record={})
+
+@app.route('/manage/edit/<int:record_id>', methods=['GET', 'POST'])
+@login_required
+def edit_record(record_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM bird_records WHERE id = ?', (record_id,))
+    record = cursor.fetchone()
+
+    if record is None:
+        conn.close()
+        return abort(404)
+
+    if request.method == 'POST':
+        druh_ptaka = request.form.get('druh_ptaka', '').strip()
+        datum_pozorovani = request.form.get('datum_pozorovani', '').strip()
+        lokalita = request.form.get('lokalita', '').strip()
+        pocet_jedincu = request.form.get('pocet_jedincu', '').strip()
+        poznamka = request.form.get('poznamka', '').strip()
+
+        if not druh_ptaka or not datum_pozorovani or not lokalita:
+            error = 'Prosím vyplňte všechna povinná pole.'
+            conn.close()
+            return render_template('record_form.html', form_title='Upravit záznam', record=request.form, error=error)
+
+        try:
+            pocet = int(pocet_jedincu) if pocet_jedincu else None
+        except ValueError:
+            pocet = None
+
+        conn.execute(
+            'UPDATE bird_records SET druh_ptaka = ?, datum_pozorovani = ?, lokalita = ?, pocet_jedincu = ?, poznamka = ? WHERE id = ?',
+            (druh_ptaka, datum_pozorovani, lokalita, pocet, poznamka, record_id)
+        )
+        conn.commit()
+        conn.close()
+        return redirect(url_for('manage_records'))
+
+    conn.close()
+    return render_template('record_form.html', form_title='Upravit záznam', record=record)
+
+@app.route('/manage/delete/<int:record_id>', methods=['POST'])
+@login_required
+def delete_record(record_id):
+    conn = get_db()
+    conn.execute('DELETE FROM bird_records WHERE id = ?', (record_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('manage_records'))
 
 if __name__ == "__main__":
     app.run(debug=True)
