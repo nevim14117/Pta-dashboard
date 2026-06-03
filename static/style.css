@@ -434,6 +434,43 @@ footer {
     border: 1px solid #ffb69e;
 }
 
+.flash-container {
+    max-width: 1200px;
+    margin: 1rem auto 0;
+    padding: 0 1rem;
+}
+
+.flash {
+    padding: 1rem 1.15rem;
+    border-radius: 0.85rem;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+}
+
+.flash-success {
+    background: #e6f4e8;
+    color: #1f5a39;
+    border: 1px solid #b8e0bf;
+}
+
+.flash-error {
+    background: #ffe5d0;
+    color: #8b2f00;
+    border: 1px solid #ffb69e;
+}
+
+.field-error {
+    font-size: 0.9rem;
+    color: #8b2f00;
+    margin-top: 0.35rem;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
 .form-grid {
     display: grid;
     gap: 1rem;

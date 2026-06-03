@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, session, abort
+from flask import Flask, render_template, request, redirect, url_for, session, abort, flash
 import sqlite3
 import os
 
@@ -147,6 +147,27 @@ def get_filter_options(conn):
         'statusy': statusy
     }
 
+def validate_record_form(form):
+    errors = {}
+    druh_ptaka = form.get('druh_ptaka', '').strip()
+    datum_pozorovani = form.get('datum_pozorovani', '').strip()
+    lokalita = form.get('lokalita', '').strip()
+    pocet_jedincu = form.get('pocet_jedincu', '').strip()
+
+    if not druh_ptaka:
+        errors['druh_ptaka'] = 'Vyplňte druh ptáka.'
+    if not datum_pozorovani:
+        errors['datum_pozorovani'] = 'Vyplňte datum pozorování.'
+    if not lokalita:
+        errors['lokalita'] = 'Vyplňte lokalitu.'
+    if pocet_jedincu:
+        try:
+            int(pocet_jedincu)
+        except ValueError:
+            errors['pocet_jedincu'] = 'Počet jedinců musí být celé číslo.'
+
+    return errors
+
 @app.route("/")
 def dashboard():
     conn = get_db()
@@ -266,6 +287,7 @@ def login():
         if AUTH_USERS.get(username) == password:
             session['logged_in'] = True
             session['username'] = username
+            flash('Přihlášení proběhlo úspěšně.', 'success')
             return redirect(request.args.get('next') or url_for('manage_records'))
 
         error = 'Neplatné přihlašovací údaje.'
@@ -275,6 +297,7 @@ def login():
 @app.route('/logout')
 def logout():
     session.clear()
+    flash('Byl(a) jste odhlášen(a).', 'success')
     return redirect(url_for('dashboard'))
 
 @app.route('/manage')
@@ -290,21 +313,19 @@ def manage_records():
 @app.route('/manage/add', methods=['GET', 'POST'])
 @login_required
 def add_record():
+    errors = {}
     if request.method == 'POST':
+        errors = validate_record_form(request.form)
+        if errors:
+            return render_template('record_form.html', form_title='Přidat nový záznam', record=request.form, errors=errors)
+
         druh_ptaka = request.form.get('druh_ptaka', '').strip()
         datum_pozorovani = request.form.get('datum_pozorovani', '').strip()
         lokalita = request.form.get('lokalita', '').strip()
         pocet_jedincu = request.form.get('pocet_jedincu', '').strip()
         poznamka = request.form.get('poznamka', '').strip()
 
-        if not druh_ptaka or not datum_pozorovani or not lokalita:
-            error = 'Prosím vyplňte všechna povinná pole.'
-            return render_template('record_form.html', form_title='Přidat nový záznam', record=request.form, error=error)
-
-        try:
-            pocet = int(pocet_jedincu) if pocet_jedincu else None
-        except ValueError:
-            pocet = None
+        pocet = int(pocet_jedincu) if pocet_jedincu else None
 
         conn = get_db()
         conn.execute(
@@ -313,9 +334,10 @@ def add_record():
         )
         conn.commit()
         conn.close()
+        flash('Záznam byl vytvořen.', 'success')
         return redirect(url_for('manage_records'))
 
-    return render_template('record_form.html', form_title='Přidat nový záznam', record={})
+    return render_template('record_form.html', form_title='Přidat nový záznam', record={}, errors=errors)
 
 @app.route('/manage/edit/<int:record_id>', methods=['GET', 'POST'])
 @login_required
@@ -329,22 +351,20 @@ def edit_record(record_id):
         conn.close()
         return abort(404)
 
+    errors = {}
     if request.method == 'POST':
+        errors = validate_record_form(request.form)
+        if errors:
+            conn.close()
+            return render_template('record_form.html', form_title='Upravit záznam', record=request.form, errors=errors)
+
         druh_ptaka = request.form.get('druh_ptaka', '').strip()
         datum_pozorovani = request.form.get('datum_pozorovani', '').strip()
         lokalita = request.form.get('lokalita', '').strip()
         pocet_jedincu = request.form.get('pocet_jedincu', '').strip()
         poznamka = request.form.get('poznamka', '').strip()
 
-        if not druh_ptaka or not datum_pozorovani or not lokalita:
-            error = 'Prosím vyplňte všechna povinná pole.'
-            conn.close()
-            return render_template('record_form.html', form_title='Upravit záznam', record=request.form, error=error)
-
-        try:
-            pocet = int(pocet_jedincu) if pocet_jedincu else None
-        except ValueError:
-            pocet = None
+        pocet = int(pocet_jedincu) if pocet_jedincu else None
 
         conn.execute(
             'UPDATE bird_records SET druh_ptaka = ?, datum_pozorovani = ?, lokalita = ?, pocet_jedincu = ?, poznamka = ? WHERE id = ?',
@@ -352,10 +372,11 @@ def edit_record(record_id):
         )
         conn.commit()
         conn.close()
+        flash('Záznam byl upraven.', 'success')
         return redirect(url_for('manage_records'))
 
     conn.close()
-    return render_template('record_form.html', form_title='Upravit záznam', record=record)
+    return render_template('record_form.html', form_title='Upravit záznam', record=record, errors=errors)
 
 @app.route('/manage/delete/<int:record_id>', methods=['POST'])
 @login_required
@@ -364,6 +385,7 @@ def delete_record(record_id):
     conn.execute('DELETE FROM bird_records WHERE id = ?', (record_id,))
     conn.commit()
     conn.close()
+    flash('Záznam byl odstraněn.', 'success')
     return redirect(url_for('manage_records'))
 
 if __name__ == "__main__":
